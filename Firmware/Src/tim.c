@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
   * File Name          : TIM.c
-  * Date               : 10/03/2015 22:17:40
+  * Date               : 20/03/2015 21:03:07
   * Description        : This file provides code for the configuration
   *                      of the TIM instances.
   ******************************************************************************
@@ -54,7 +54,7 @@ void MX_TIM1_Init(void)
   htim1.Instance = TIM1;
   htim1.Init.Prescaler = 0;
   htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim1.Init.Period = 12-1;
+  htim1.Init.Period = 11;
   htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim1.Init.RepetitionCounter = 0;
   HAL_TIM_Base_Init(&htim1);
@@ -62,10 +62,8 @@ void MX_TIM1_Init(void)
   sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
   HAL_TIM_ConfigClockSource(&htim1, &sClockSourceConfig);
 
-  //HAL_TIM_OnePulse_Init(&htim1, TIM_OPMODE_SINGLE);
-
-  sMasterConfig.MasterOutputTrigger = TIM_TRGO_UPDATE;//TIM_TRGO_ENABLE;
-  sMasterConfig.MasterOutputTrigger2 = TIM_TRGO2_UPDATE;//TIM_TRGO2_ENABLE;
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_UPDATE;
+  sMasterConfig.MasterOutputTrigger2 = TIM_TRGO2_UPDATE;
   sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_ENABLE;
   HAL_TIMEx_MasterConfigSynchronization(&htim1, &sMasterConfig);
 
@@ -94,7 +92,7 @@ void MX_TIM2_Init(void)
   HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig);
 
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 25;
+  sConfigOC.Pulse = 20;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
   HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_1);

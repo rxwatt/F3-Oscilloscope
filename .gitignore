@@ -2,3 +2,14 @@
 *.bak
 *.lst
 Firmware/MDK-ARM/F3_Oscilloscope Configuration
+Firmware/Drivers/CMSIS/Device/ST/STM32F3xx/Include/stm32f301x8.h
+Firmware/Drivers/CMSIS/Device/ST/STM32F3xx/Include/stm32f302x8.h
+Firmware/Drivers/CMSIS/Device/ST/STM32F3xx/Include/stm32f302xc.h
+Firmware/Drivers/CMSIS/Device/ST/STM32F3xx/Include/stm32f302xe.h
+Firmware/Drivers/CMSIS/Device/ST/STM32F3xx/Include/stm32f318xx.h
+Firmware/Drivers/CMSIS/Device/ST/STM32F3xx/Include/stm32f328xx.h
+Firmware/Drivers/CMSIS/Device/ST/STM32F3xx/Include/stm32f334x8.h
+Firmware/Drivers/CMSIS/Device/ST/STM32F3xx/Include/stm32f358xx.h
+Firmware/Drivers/CMSIS/Device/ST/STM32F3xx/Include/stm32f373xc.h
+Firmware/Drivers/CMSIS/Device/ST/STM32F3xx/Include/stm32f378xx.h
+Firmware/Drivers/CMSIS/Device/ST/STM32F3xx/Include/stm32f398xx.h

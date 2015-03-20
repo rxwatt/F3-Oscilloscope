@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
   * File Name          : ADC.c
-  * Date               : 10/03/2015 22:17:38
+  * Date               : 20/03/2015 21:03:06
   * Description        : This file provides code for the configuration
   *                      of the ADC instances.
   ******************************************************************************
@@ -48,7 +48,6 @@ ADC_HandleTypeDef hadc2;
 ADC_HandleTypeDef hadc3;
 ADC_HandleTypeDef hadc4;
 DMA_HandleTypeDef hdma_adc1;
-DMA_HandleTypeDef hdma_adc2;
 DMA_HandleTypeDef hdma_adc3;
 
 /* ADC1 init function */
@@ -60,10 +59,10 @@ void MX_ADC1_Init(void)
     /**Common config 
     */
   hadc1.Instance = ADC1;
-  hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV1;
+  hadc1.Init.ClockPrescaler = ADC_CLOCKPRESCALER_PCLK_DIV1;
   hadc1.Init.Resolution = ADC_RESOLUTION8b;
   hadc1.Init.ScanConvMode = DISABLE;
-  hadc1.Init.ContinuousConvMode = DISABLE;//ENABLE;
+  hadc1.Init.ContinuousConvMode = DISABLE;
   hadc1.Init.DiscontinuousConvMode = DISABLE;
   hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_RISINGFALLING;
   hadc1.Init.ExternalTrigConv = ADC_EXTERNALTRIGCONV_T1_TRGO;
@@ -101,10 +100,10 @@ void MX_ADC2_Init(void)
     /**Common config 
     */
   hadc2.Instance = ADC2;
-  hadc2.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV1;
+  hadc2.Init.ClockPrescaler = ADC_CLOCKPRESCALER_PCLK_DIV1;
   hadc2.Init.Resolution = ADC_RESOLUTION8b;
   hadc2.Init.ScanConvMode = DISABLE;
-  hadc2.Init.ContinuousConvMode = DISABLE;//ENABLE;
+  hadc2.Init.ContinuousConvMode = DISABLE;
   hadc2.Init.DiscontinuousConvMode = DISABLE;
   hadc2.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
   hadc2.Init.DataAlign = ADC_DATAALIGN_RIGHT;
@@ -135,10 +134,10 @@ void MX_ADC3_Init(void)
     /**Common config 
     */
   hadc3.Instance = ADC3;
-  hadc3.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV1;
+  hadc3.Init.ClockPrescaler = ADC_CLOCKPRESCALER_PCLK_DIV1;
   hadc3.Init.Resolution = ADC_RESOLUTION8b;
   hadc3.Init.ScanConvMode = DISABLE;
-  hadc3.Init.ContinuousConvMode = DISABLE;//ENABLE;
+  hadc3.Init.ContinuousConvMode = DISABLE;
   hadc3.Init.DiscontinuousConvMode = DISABLE;
   hadc3.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_RISINGFALLING;
   hadc3.Init.ExternalTrigConv = ADC_EXTERNALTRIGCONV_T1_TRGO2;
@@ -176,10 +175,10 @@ void MX_ADC4_Init(void)
     /**Common config 
     */
   hadc4.Instance = ADC4;
-  hadc4.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV1;
+  hadc4.Init.ClockPrescaler = ADC_CLOCKPRESCALER_PCLK_DIV1;
   hadc4.Init.Resolution = ADC_RESOLUTION8b;
   hadc4.Init.ScanConvMode = DISABLE;
-  hadc4.Init.ContinuousConvMode = DISABLE;//ENABLE;
+  hadc4.Init.ContinuousConvMode = DISABLE;
   hadc4.Init.DiscontinuousConvMode = DISABLE;
   hadc4.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
   hadc4.Init.DataAlign = ADC_DATAALIGN_RIGHT;
@@ -264,20 +263,6 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc)
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
-
-    /* Peripheral DMA init*/
-  
-    hdma_adc2.Instance = DMA2_Channel1;
-    hdma_adc2.Init.Direction = DMA_PERIPH_TO_MEMORY;
-    hdma_adc2.Init.PeriphInc = DMA_PINC_DISABLE;
-    hdma_adc2.Init.MemInc = DMA_MINC_ENABLE;
-    hdma_adc2.Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
-    hdma_adc2.Init.MemDataAlignment = DMA_MDATAALIGN_HALFWORD;
-    hdma_adc2.Init.Mode = DMA_NORMAL;
-    hdma_adc2.Init.Priority = DMA_PRIORITY_HIGH;
-    HAL_DMA_Init(&hdma_adc2);
-
-    __HAL_LINKDMA(hadc,DMA_Handle,hdma_adc2);
 
   /* USER CODE BEGIN ADC2_MspInit 1 */
 
@@ -386,8 +371,6 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* hadc)
     */
     HAL_GPIO_DeInit(GPIOC, GPIO_PIN_1);
 
-    /* Peripheral DMA DeInit*/
-    HAL_DMA_DeInit(hadc->DMA_Handle);
   /* USER CODE BEGIN ADC2_MspDeInit 1 */
 
   /* USER CODE END ADC2_MspDeInit 1 */

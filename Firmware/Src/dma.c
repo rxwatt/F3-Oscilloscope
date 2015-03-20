@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
   * File Name          : dma.c
-  * Date               : 10/03/2015 22:17:39
+  * Date               : 20/03/2015 21:03:06
   * Description        : This file provides code for the configuration
   *                      of all the requested memory to memory DMA transfers.
   ******************************************************************************
@@ -53,8 +53,8 @@
 void MX_DMA_Init(void) 
 {
   /* DMA controller clock enable */
-  __DMA2_CLK_ENABLE();
   __DMA1_CLK_ENABLE();
+  __DMA2_CLK_ENABLE();
 
   /* DMA interrupt init */
 
