@@ -39,7 +39,7 @@
 #include "gpio.h"
 
 /* USER CODE BEGIN 0 */
-
+#include "oscilloscope.h"
 /* USER CODE END 0 */
 
 TIM_HandleTypeDef htim1;
@@ -78,7 +78,7 @@ void MX_TIM2_Init(void)
   htim2.Instance = TIM2;
   htim2.Init.Prescaler = 71;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 49;
+  htim2.Init.Period = 1000000/GENERATOR_FREQUENCY - 1;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   HAL_TIM_Base_Init(&htim2);
 
@@ -92,7 +92,7 @@ void MX_TIM2_Init(void)
   HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig);
 
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 20;
+  sConfigOC.Pulse = 1000000/GENERATOR_FREQUENCY/2;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
   HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_1);
