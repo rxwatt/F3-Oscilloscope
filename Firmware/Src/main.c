@@ -80,7 +80,9 @@ const uint16_t sampling_parameters[] = {
 		/*  13 -   10 ms -   40000 Hz */    4000,     1800,
 		/*  14 -   20 ms -   20000 Hz */    4000,     3600,
 		/*  15 -   50 ms -    8000 Hz */    4000,     9000,
-		/*  16 -  100 ms -    1000 Hz */     200,    36000, // div 4
+		/*  16 -  100 ms -    1000 Hz */    1000,    36000, // div 4
+		/*  17 -  200 ms -    1000 Hz */    2000,    36000, // div 4
+	  /*  18 -  500 ms -    1000 Hz */    5000,    36000, // div 4
 
 		/* Conversion time - 8.5 cycles for 8 bit */			
 };
@@ -234,12 +236,11 @@ int main(void)
 				
 		} else { // scan mode
 			
-			#define SHORT_BUFFER_LENGTH 100
-			
-			HAL_GPIO_WritePin(GPIOE, GPIO_PIN_10, GPIO_PIN_SET);
-
-			HAL_ADCEx_MultiModeStart_DMA(&hadc1, (uint32_t*)adc_data, SHORT_BUFFER_LENGTH);
-			HAL_ADCEx_MultiModeStart_DMA(&hadc3, (uint32_t*)adc_data + SHORT_BUFFER_LENGTH/2, SHORT_BUFFER_LENGTH);			
+			#define SHORT_BUFFER_LENGTH 100		
+			#define SND_BUF SHORT_BUFFER_LENGTH*4
+			static uint8_t current_buffer = 0;			
+			HAL_ADCEx_MultiModeStart_DMA(&hadc1, (uint32_t*)adc_data + SND_BUF/4*current_buffer, SHORT_BUFFER_LENGTH);
+			HAL_ADCEx_MultiModeStart_DMA(&hadc3, (uint32_t*)adc_data + SND_BUF/4*current_buffer + SHORT_BUFFER_LENGTH/2, SHORT_BUFFER_LENGTH);			
 			HAL_TIM_Base_Start(&htim1);
 			HAL_DMA_PollForTransfer(&hdma_adc1,HAL_DMA_FULL_TRANSFER,1000);
 			HAL_DMA_PollForTransfer(&hdma_adc3,HAL_DMA_FULL_TRANSFER,1000);	
@@ -249,21 +250,22 @@ int main(void)
 			HAL_ADC_Stop(&hadc1);
 			HAL_ADC_Stop(&hadc3);
 
-			HAL_GPIO_WritePin(GPIOE, GPIO_PIN_10, GPIO_PIN_RESET);
-
 			if (data_request_flag) {
+				HAL_GPIO_TogglePin(GPIOE,GPIO_PIN_15);
 				header[0] = config.resolution;
 				header[1] = SHORT_BUFFER_LENGTH>>8;
 				header[2] = SHORT_BUFFER_LENGTH&0xFF;
 				header[3] = triggered;
 				CDC_Transmit_FS(header,HEADER_SIZE);
-				CDC_Transmit_FS(adc_data, SHORT_BUFFER_LENGTH*4);
-				//CDC_Transmit_FS(adc_data+SHORT_BUFFER_LENGTH, SHORT_BUFFER_LENGTH);
-				//CDC_Transmit_FS(adc_data+SHORT_BUFFER_LENGTH*2, SHORT_BUFFER_LENGTH);
-				//CDC_Transmit_FS(adc_data+SHORT_BUFFER_LENGTH*2+SHORT_BUFFER_LENGTH, SHORT_BUFFER_LENGTH);				
+				// fix wrong first value
+				*(adc_data+SND_BUF*current_buffer + 0) = *(adc_data+SND_BUF*current_buffer + 2);
+				*(adc_data+SND_BUF*current_buffer + 1) = *(adc_data+SND_BUF*current_buffer + 3);
+				*(adc_data+SND_BUF*current_buffer + SHORT_BUFFER_LENGTH*2 + 0) = *(adc_data+SND_BUF*current_buffer + SHORT_BUFFER_LENGTH*2 + 2);
+				*(adc_data+SND_BUF*current_buffer + SHORT_BUFFER_LENGTH*2 + 1) = *(adc_data+SND_BUF*current_buffer + SHORT_BUFFER_LENGTH*2 + 3);
+				CDC_Transmit_FS(adc_data + SND_BUF*current_buffer, SHORT_BUFFER_LENGTH*4);	
 				data_request_flag = 0;
 			};
-			
+			current_buffer ^= 1;	
 		};
   }
   /* USER CODE END 3 */

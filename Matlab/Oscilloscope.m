@@ -1,19 +1,27 @@
-%clear all;
+clear all;
 
 % Text constatnts
 Strings = ['500 ns'; '  1 us'; '  2 us'; '  5 us'; ' 10 us'; ' 20 us';...
-    ' 50 us'; '100 us'; '200 us'; '500 us'; '  1 ms'; '  2 ms';...
-    '  5 ms'; ' 10 ms'; ' 20 ms'; ' 50 ms'; '100 ms'];
+    ' 50 us'; '100 us'; '200 us'; '500 us'; '  1 ms'; '  2 ms'; '  5 ms';...
+    ' 10 ms'; ' 20 ms'; ' 50 ms'; '100 ms'; '200 ms'; '500 ms'];
+ADC_Scan_Data = [];
 
 % Variables and defaults
-if (~exist('adc_sample_length','var'))
-    adc_sample_length = 8000/2;
-    resolution = 4;
+try
+    load('Settings');
+catch err
+    resolution = 16;
     trigger_channel = 2;
     trigger_level = 120;
     trigger_type = 0;
     trigger_position = 5;
 end;
+ADC_Scan_Data = [];
+scan_cnt = 0;
+
+% Override settings
+%resolution = 16;
+
 
 % Figure initialization
 fig = figure;
@@ -36,6 +44,7 @@ while (1)
     adc_sample_length = ADC_Header(2)*256 + ADC_Header(3);
     adc_triggered = ADC_Header(4);
     ADC_Buffer = fread(com,adc_sample_length*4,'uint8');
+    scan_cnt = scan_cnt+1;
     
     % Sort data
     ADC_Data = zeros(adc_sample_length,4);
@@ -45,8 +54,33 @@ while (1)
     ADC_Data(:,3) = ADC_Buffer(indexes+adc_sample_length*2);
     ADC_Data(:,4) = ADC_Buffer(indexes+1+adc_sample_length*2);
     
+    % Append scan data
+    
+    
+    if (resolution >= 16)       
+        switch resolution
+            case 18
+                frames_per_screen = 100;
+            case 17
+                frames_per_screen = 40;
+            case 16
+                frames_per_screen = 20;
+            otherwise
+                frames_per_screen = 1;
+        end;
+        if (scan_cnt <= frames_per_screen)
+            ADC_Scan_Data = [ADC_Scan_Data; ADC_Data]; %#ok<AGROW>
+            ADC_Data = ADC_Scan_Data;
+        else
+            ADC_Scan_Data = [];
+            scan_cnt = 0;
+        end;
+        time = linspace(0,scan_cnt/frames_per_screen*10,length(ADC_Data));
+    else
+        time = linspace(0,10,length(ADC_Data));
+    end;
+    
     % Display data
-    time = linspace(0,10,adc_sample_length);
     plot(time,ADC_Data,'LineWidth',2);
     
     % Display trigger lines
@@ -96,10 +130,19 @@ while (1)
             case 28 % [Left]
                 if (resolution < (size(Strings,1)-1))
                     resolution = resolution + 1;
+                    if (resolution > 15)
+                        ADC_Scan_Data = [];
+                        scan_cnt = 0;
+                    end;
                 end;
             case 29 % [Right]
                 if (resolution > 0)
                     resolution = resolution - 1;
+                    if (resolution >= 16)
+                        ADC_Scan_Data = [];
+                        ADC_Data = [];
+                        scan_cnt = 0;
+                    end;
                 end;
             case 31 % [Down]
                 if (trigger_level > 0)
@@ -127,9 +170,12 @@ while (1)
         TX_Settings;
         key = [];
     end;
-    pause(0.1);
 end;
 
 fclose(com);
 close(fig);
+
+save('Settings', 'resolution', 'trigger_channel', 'trigger_level', ...
+    'trigger_type', 'trigger_position');
+
 disp('Done');

@@ -14,7 +14,7 @@
 #define TRIGGER_TYPE_RISING   0
 #define TRIGGER_TYPE_FALLING  1
 
-#define GENERATOR_FREQUENCY 20  // 16 Hz - 250 kHz
+#define GENERATOR_FREQUENCY 17  // 16 Hz - 250 kHz
 
 struct _config_struct {
 	uint8_t channel_mask;            //  0 0 0 0 CH4 CH3 CH2 CH1
