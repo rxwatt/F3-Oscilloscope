@@ -80,7 +80,7 @@ const uint16_t sampling_parameters[] = {
 		/*  13 -   10 ms -   40000 Hz */    4000,     1800,
 		/*  14 -   20 ms -   20000 Hz */    4000,     3600,
 		/*  15 -   50 ms -    8000 Hz */    4000,     9000,
-		/*  16 -  100 ms -    2000 Hz */    1000,    36000,
+		/*  16 -  100 ms -    1000 Hz */     200,    36000, // div 4
 
 		/* Conversion time - 8.5 cycles for 8 bit */			
 };
@@ -97,6 +97,11 @@ void Apply_Sampling_Parameters(void)
 {
 
   htim1.Init.Period = sampling_parameters[config.resolution*2+1]-1;
+	if (config.resolution < 16)
+		htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+	else
+		htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV4;
+	
   HAL_TIM_Base_Init(&htim1);
 	points_per_screen = sampling_parameters[config.resolution*2];
 
@@ -175,73 +180,90 @@ int main(void)
 			config_change_flag = 0;
 		};
 		
-		if (data_request_flag) 
-		{
-			if (config.resolution <= 15) { // sampling mode 
+		if (config.resolution <= 15) { // sampling mode 
 			
-				HAL_GPIO_WritePin(GPIOE, GPIO_PIN_10, GPIO_PIN_SET);
+			HAL_GPIO_WritePin(GPIOE, GPIO_PIN_10, GPIO_PIN_SET);
 
-				HAL_ADCEx_MultiModeStart_DMA(&hadc1, (uint32_t*)adc_data, ADC_BUFFER_LENGTH);
-				HAL_ADCEx_MultiModeStart_DMA(&hadc3, (uint32_t*)adc_data + ADC_BUFFER_LENGTH/2, ADC_BUFFER_LENGTH);			
-				HAL_TIM_Base_Start(&htim1);
-				HAL_DMA_PollForTransfer(&hdma_adc1,HAL_DMA_FULL_TRANSFER,1000);
-				HAL_DMA_PollForTransfer(&hdma_adc3,HAL_DMA_FULL_TRANSFER,1000);	
-				HAL_TIM_Base_Stop(&htim1);
-				HAL_ADCEx_MultiModeStop_DMA(&hadc1);
-				HAL_ADCEx_MultiModeStop_DMA(&hadc3);
-				HAL_ADC_Stop(&hadc1);
-				HAL_ADC_Stop(&hadc3);
+			HAL_ADCEx_MultiModeStart_DMA(&hadc1, (uint32_t*)adc_data, ADC_BUFFER_LENGTH);
+			HAL_ADCEx_MultiModeStart_DMA(&hadc3, (uint32_t*)adc_data + ADC_BUFFER_LENGTH/2, ADC_BUFFER_LENGTH);			
+			HAL_TIM_Base_Start(&htim1);
+			HAL_DMA_PollForTransfer(&hdma_adc1,HAL_DMA_FULL_TRANSFER,1000);
+			HAL_DMA_PollForTransfer(&hdma_adc3,HAL_DMA_FULL_TRANSFER,1000);	
+			HAL_TIM_Base_Stop(&htim1);
+			HAL_ADCEx_MultiModeStop_DMA(&hadc1);
+			HAL_ADCEx_MultiModeStop_DMA(&hadc3);
+			HAL_ADC_Stop(&hadc1);
+			HAL_ADC_Stop(&hadc3);
 
-				HAL_GPIO_WritePin(GPIOE, GPIO_PIN_10, GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(GPIOE, GPIO_PIN_10, GPIO_PIN_RESET);
 
-				trigger_point = 0;
-				triggered = 0;
-				offset = (points_per_screen*config.trigger_position)/10*2;
-				if ((config.trigger_channel == 3) || (config.trigger_channel == 4))
-					offset += ADC_BUFFER_LENGTH*2;
-				if ((config.trigger_channel == 2) || (config.trigger_channel == 4))
-					offset += 1;
+			trigger_point = 0;
+			triggered = 0;
+			offset = (points_per_screen*config.trigger_position)/10*2;
+			if ((config.trigger_channel == 3) || (config.trigger_channel == 4))
+				offset += ADC_BUFFER_LENGTH*2;
+			if ((config.trigger_channel == 2) || (config.trigger_channel == 4))
+				offset += 1;
 
-				if (config.trigger_type == TRIGGER_TYPE_RISING) {
-					for (i = 0; i < (ADC_BUFFER_LENGTH-points_per_screen-2); i++)
-						if ((adc_data[i*2+offset] < config.trigger_level) && (adc_data[(i+1)*2+offset] >= config.trigger_level)) {
-								trigger_point = i+1;	
-								triggered = 1;
-							};
-				} else {
-					for (i = 0; i < (ADC_BUFFER_LENGTH-points_per_screen-2); i++)
-						if ((adc_data[i*2+offset] >= config.trigger_level) && (adc_data[(i+1)*2+offset] < config.trigger_level)) {
-								trigger_point = i+1;	
-								triggered = 1;
-							};
-				};						
-						
-				//#define TERMINAL_DEBUG
-				#ifdef TERMINAL_DEBUG
-					for (i = 0; i < ADC_BUFFER_LENGTH; i++)
-					{ 
-						printf("%d\t%d\t",adc_data[i*2],adc_data[i*2+1]);
-						printf("%d\t%d\n\r",adc_data[i*2+ADC_BUFFER_LENGTH*2],adc_data[i*2+1+ADC_BUFFER_LENGTH*2]);				
+			if (config.trigger_type == TRIGGER_TYPE_RISING) {
+				for (i = 0; i < (ADC_BUFFER_LENGTH-points_per_screen-2); i++)
+					if ((adc_data[i*2+offset] < config.trigger_level) && (adc_data[(i+1)*2+offset] >= config.trigger_level)) {
+						trigger_point = i+1;	
+						triggered = 1;
 					};
-					printf("--------------\n\r");
-				#else
-					header[0] = config.resolution;
-					header[1] = points_per_screen>>8;
-					header[2] = points_per_screen&0xFF;
-					header[3] = triggered;
-					CDC_Transmit_FS(header,HEADER_SIZE);
-					CDC_Transmit_FS(adc_data+trigger_point*2, points_per_screen);
-					CDC_Transmit_FS(adc_data+trigger_point*2+points_per_screen, points_per_screen);
-					CDC_Transmit_FS(adc_data+trigger_point*2+ADC_BUFFER_LENGTH*2, points_per_screen);
-					CDC_Transmit_FS(adc_data+trigger_point*2+ADC_BUFFER_LENGTH*2+points_per_screen, points_per_screen);				
-				#endif
-			
-			} else { // scanning mode 
-				
+			} else {
+				for (i = 0; i < (ADC_BUFFER_LENGTH-points_per_screen-2); i++)
+					if ((adc_data[i*2+offset] >= config.trigger_level) && (adc_data[(i+1)*2+offset] < config.trigger_level)) {
+						trigger_point = i+1;	
+						triggered = 1;
+					};
+			};						
+					
+			if (data_request_flag) {
+				header[0] = config.resolution;
+				header[1] = points_per_screen>>8;
+				header[2] = points_per_screen&0xFF;
+				header[3] = triggered;
+				CDC_Transmit_FS(header,HEADER_SIZE);
+				CDC_Transmit_FS(adc_data+trigger_point*2, points_per_screen);
+				CDC_Transmit_FS(adc_data+trigger_point*2+points_per_screen, points_per_screen);
+				CDC_Transmit_FS(adc_data+trigger_point*2+ADC_BUFFER_LENGTH*2, points_per_screen);
+				CDC_Transmit_FS(adc_data+trigger_point*2+ADC_BUFFER_LENGTH*2+points_per_screen, points_per_screen);				
+				data_request_flag = 0;
 			};				
 				
-				
-			data_request_flag = 0;
+		} else { // scan mode
+			
+			#define SHORT_BUFFER_LENGTH 100
+			
+			HAL_GPIO_WritePin(GPIOE, GPIO_PIN_10, GPIO_PIN_SET);
+
+			HAL_ADCEx_MultiModeStart_DMA(&hadc1, (uint32_t*)adc_data, SHORT_BUFFER_LENGTH);
+			HAL_ADCEx_MultiModeStart_DMA(&hadc3, (uint32_t*)adc_data + SHORT_BUFFER_LENGTH/2, SHORT_BUFFER_LENGTH);			
+			HAL_TIM_Base_Start(&htim1);
+			HAL_DMA_PollForTransfer(&hdma_adc1,HAL_DMA_FULL_TRANSFER,1000);
+			HAL_DMA_PollForTransfer(&hdma_adc3,HAL_DMA_FULL_TRANSFER,1000);	
+			HAL_TIM_Base_Stop(&htim1);
+			HAL_ADCEx_MultiModeStop_DMA(&hadc1);
+			HAL_ADCEx_MultiModeStop_DMA(&hadc3);
+			HAL_ADC_Stop(&hadc1);
+			HAL_ADC_Stop(&hadc3);
+
+			HAL_GPIO_WritePin(GPIOE, GPIO_PIN_10, GPIO_PIN_RESET);
+
+			if (data_request_flag) {
+				header[0] = config.resolution;
+				header[1] = SHORT_BUFFER_LENGTH>>8;
+				header[2] = SHORT_BUFFER_LENGTH&0xFF;
+				header[3] = triggered;
+				CDC_Transmit_FS(header,HEADER_SIZE);
+				CDC_Transmit_FS(adc_data, SHORT_BUFFER_LENGTH*4);
+				//CDC_Transmit_FS(adc_data+SHORT_BUFFER_LENGTH, SHORT_BUFFER_LENGTH);
+				//CDC_Transmit_FS(adc_data+SHORT_BUFFER_LENGTH*2, SHORT_BUFFER_LENGTH);
+				//CDC_Transmit_FS(adc_data+SHORT_BUFFER_LENGTH*2+SHORT_BUFFER_LENGTH, SHORT_BUFFER_LENGTH);				
+				data_request_flag = 0;
+			};
+			
 		};
   }
   /* USER CODE END 3 */
