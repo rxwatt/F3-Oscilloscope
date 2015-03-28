@@ -3,8 +3,7 @@ clear all;
 % Text constatnts
 Strings = ['500 ns'; '  1 us'; '  2 us'; '  5 us'; ' 10 us'; ' 20 us';...
     ' 50 us'; '100 us'; '200 us'; '500 us'; '  1 ms'; '  2 ms'; '  5 ms';...
-    ' 10 ms'; ' 20 ms'; ' 50 ms'; '100 ms'; '200 ms'; '500 ms'];
-ADC_Scan_Data = [];
+    ' 10 ms'; ' 20 ms'; ' 50 ms'; '100 ms'; '200 ms'; '500 ms'; '   1 s'];
 
 % Variables and defaults
 try
@@ -44,7 +43,6 @@ while (1)
     adc_sample_length = ADC_Header(2)*256 + ADC_Header(3);
     adc_triggered = ADC_Header(4);
     ADC_Buffer = fread(com,adc_sample_length*4,'uint8');
-    scan_cnt = scan_cnt+1;
     
     % Sort data
     ADC_Data = zeros(adc_sample_length,4);
@@ -55,10 +53,10 @@ while (1)
     ADC_Data(:,4) = ADC_Buffer(indexes+1+adc_sample_length*2);
     
     % Append scan data
-    
-    
-    if (resolution >= 16)       
-        switch resolution
+    if (adc_mode >= 16)  
+        switch adc_mode
+            case 19
+                frames_per_screen = 200;
             case 18
                 frames_per_screen = 100;
             case 17
@@ -68,6 +66,7 @@ while (1)
             otherwise
                 frames_per_screen = 1;
         end;
+        scan_cnt = scan_cnt+1;
         if (scan_cnt <= frames_per_screen)
             ADC_Scan_Data = [ADC_Scan_Data; ADC_Data]; %#ok<AGROW>
             ADC_Data = ADC_Scan_Data;
@@ -75,10 +74,15 @@ while (1)
             ADC_Scan_Data = [];
             scan_cnt = 0;
         end;
-        time = linspace(0,scan_cnt/frames_per_screen*10,length(ADC_Data));
+        time = linspace(0,scan_cnt/frames_per_screen*10,length(ADC_Data)+1);
+        time(1) = [];
     else
-        time = linspace(0,10,length(ADC_Data));
+    %     
+        time = linspace(0,10,length(ADC_Data)+1);
+        time(1) = [];
     end;
+    
+    %fprintf('%d %d\n\r',adc_mode,resolution);
     
     % Display data
     plot(time,ADC_Data,'LineWidth',2);
@@ -132,16 +136,18 @@ while (1)
                     resolution = resolution + 1;
                     if (resolution > 15)
                         ADC_Scan_Data = [];
+                        ADC_Data = [];
                         scan_cnt = 0;
                     end;
                 end;
             case 29 % [Right]
                 if (resolution > 0)
                     resolution = resolution - 1;
-                    if (resolution >= 16)
+                    if (resolution > 15)
                         ADC_Scan_Data = [];
                         ADC_Data = [];
                         scan_cnt = 0;
+                        first_sample = 1;
                     end;
                 end;
             case 31 % [Down]

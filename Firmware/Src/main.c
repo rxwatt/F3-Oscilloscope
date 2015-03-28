@@ -80,9 +80,10 @@ const uint16_t sampling_parameters[] = {
 		/*  13 -   10 ms -   40000 Hz */    4000,     1800,
 		/*  14 -   20 ms -   20000 Hz */    4000,     3600,
 		/*  15 -   50 ms -    8000 Hz */    4000,     9000,
-		/*  16 -  100 ms -    1000 Hz */    1000,    36000, // div 4
-		/*  17 -  200 ms -    1000 Hz */    2000,    36000, // div 4
-	  /*  18 -  500 ms -    1000 Hz */    5000,    36000, // div 4
+		/*  16 -  100 ms -    2000 Hz */    2000,    36000, 
+		/*  17 -  200 ms -    2000 Hz */    4000,    36000, 
+	  /*  18 -  500 ms -    2000 Hz */   10000,    36000, 
+		/*  19 -    1 s  -    2000 Hz */   20000,    36000, 
 
 		/* Conversion time - 8.5 cycles for 8 bit */			
 };
@@ -99,10 +100,7 @@ void Apply_Sampling_Parameters(void)
 {
 
   htim1.Init.Period = sampling_parameters[config.resolution*2+1]-1;
-	if (config.resolution < 16)
-		htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-	else
-		htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV4;
+	htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
 	
   HAL_TIM_Base_Init(&htim1);
 	points_per_screen = sampling_parameters[config.resolution*2];
